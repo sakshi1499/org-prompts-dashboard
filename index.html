@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organizational Prompts — Usage Analytics Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --primary: #6264A7;
+    --primary-light: #8B8CC7;
+    --primary-dark: #464775;
+    --success: #13A10E;
+    --warning: #F7630C;
+    --danger: #C50F1F;
+    --bg: #F5F5F5;
+    --card-bg: #FFFFFF;
+    --text: #242424;
+    --text-secondary: #616161;
+    --text-tertiary: #8A8A8A;
+    --border: #E0E0E0;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 24px 40px 0; }
+  .header h1 { font-size: 22px; font-weight: 600; }
+  .header .subtitle { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; padding-bottom: 18px; }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .time-toggle { display: flex; background: rgba(255,255,255,0.15); border-radius: 6px; overflow: hidden; }
+  .time-toggle button { background: none; border: none; color: rgba(255,255,255,0.7); padding: 6px 16px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+  .time-toggle button.active { background: rgba(255,255,255,0.25); color: white; font-weight: 600; }
+  .time-toggle button:hover { color: white; }
+  .export-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .export-btn:hover { background: rgba(255,255,255,0.3); }
+
+  /* Tabs */
+  .tab-bar { display: flex; gap: 0; padding: 0 0 0 0; }
+  .tab-btn {
+    background: none; border: none; color: rgba(255,255,255,0.65); font-family: inherit;
+    font-size: 14px; font-weight: 600; padding: 12px 28px 10px;
+    cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;
+    position: relative;
+  }
+  .tab-btn:hover { color: rgba(255,255,255,0.9); }
+  .tab-btn.active { color: white; border-bottom-color: white; }
+  .tab-btn .tab-badge {
+    display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 7px;
+    border-radius: 8px; margin-left: 8px; vertical-align: middle;
+  }
+  .tab-btn .badge-ga { background: rgba(19,161,14,0.3); color: #b0ffb0; }
+  .tab-btn .badge-offline { background: rgba(247,99,12,0.3); color: #ffe0b0; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .dashboard { max-width: 1440px; margin: 0 auto; padding: 24px 40px 60px; }
+
+  /* KPI Cards */
+  .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi-card { background: var(--card-bg); border-radius: 8px; padding: 22px 28px; box-shadow: var(--shadow); border-top: 3px solid var(--primary); }
+  .kpi-card .label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  .kpi-card .label-help { font-size: 11px; color: var(--text-tertiary); font-weight: 400; text-transform: none; letter-spacing: 0; margin-top: 1px; }
+  .kpi-card .value { font-size: 36px; font-weight: 700; color: var(--text); margin: 6px 0 2px; }
+  .kpi-card .delta { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+  .delta.up { color: var(--success); }
+  .delta.down { color: var(--danger); }
+  .delta .arrow { font-size: 13px; }
+
+  /* Section */
+  .section { background: var(--card-bg); border-radius: 8px; padding: 24px; box-shadow: var(--shadow); margin-bottom: 24px; }
+  .section-title { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+  .section-subtitle { font-size: 12px; color: var(--text-secondary); margin-bottom: 16px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+
+  .chart-container { position: relative; width: 100%; }
+  .chart-container.stacked { height: 340px; }
+  .chart-container.line-md { height: 300px; }
+
+  /* Engagement Funnel */
+  .funnel-section { padding: 24px 24px 20px; }
+  .funnel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .funnel-col-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 14px; }
+  .funnel-viz { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .funnel-step { display: grid; grid-template-columns: 160px 1fr 120px; align-items: center; width: 100%; }
+  .funnel-step-label { font-size: 13px; font-weight: 600; color: var(--text); text-align: right; padding-right: 16px; }
+  .funnel-step-label .fsl-sub { font-size: 10px; font-weight: 400; color: var(--text-secondary); display: block; line-height: 1.3; margin-top: 2px; }
+  .funnel-bar-wrap { display: flex; justify-content: center; }
+  .funnel-bar { height: 54px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-direction: column; color: white; font-weight: 600; font-size: 15px; transition: all 0.3s; min-width: 90px; }
+  .funnel-bar .fb-num { font-size: 18px; font-weight: 700; }
+  .funnel-bar .fb-label { font-size: 10px; font-weight: 400; opacity: 0.9; }
+  .funnel-step-metrics { font-size: 12px; color: var(--text-secondary); padding-left: 16px; }
+  .funnel-step-metrics strong { color: var(--text); }
+  .funnel-connector { display: flex; justify-content: center; padding: 4px 0; width: 100%; }
+  .funnel-conv-badge { background: #F0F0F5; border-radius: 12px; padding: 3px 16px; font-size: 11px; font-weight: 600; color: var(--primary-dark); display: inline-flex; align-items: center; gap: 6px; }
+  .funnel-conv-badge .fcb-arrow { opacity: 0.4; }
+
+  /* Table */
+  .table-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
+  .search-box { padding: 8px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: inherit; width: 260px; outline: none; }
+  .search-box:focus { border-color: var(--primary); }
+  .table-info { font-size: 12px; color: var(--text-secondary); }
+
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.data-table th { background: #F0F0F5; color: var(--text); font-weight: 600; text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border); cursor: pointer; user-select: none; white-space: nowrap; font-size: 12px; }
+  table.data-table th:hover { background: #E5E5EE; }
+  table.data-table th .sort-icon { font-size: 9px; margin-left: 3px; opacity: 0.3; }
+  table.data-table th .th-sub { display: block; font-size: 10px; font-weight: 400; color: var(--text-tertiary); white-space: nowrap; }
+  table.data-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  table.data-table tr:hover td { background: #FAFAFF; }
+  .mini-bar-cell { display: flex; align-items: center; gap: 6px; }
+  .mini-bar-bg { width: 44px; height: 5px; background: #E8E8E8; border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+  .mini-bar-fill { height: 100%; border-radius: 3px; }
+  .mini-bar-fill.high { background: var(--success); }
+  .mini-bar-fill.mid { background: var(--warning); }
+  .mini-bar-fill.low { background: var(--danger); }
+
+  /* Phase banner */
+  .phase-banner {
+    background: #FFF8E6; border: 1px solid #FFD54F; border-radius: 8px;
+    padding: 14px 20px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 12px;
+  }
+  .phase-banner.ga { background: #E6F7E6; border-color: #81C784; }
+  .phase-banner-icon { font-size: 20px; flex-shrink: 0; }
+  .phase-banner-text { font-size: 13px; color: var(--text); }
+  .phase-banner-text strong { display: block; margin-bottom: 2px; }
+
+  @media (max-width: 1100px) {
+    .kpi-row { grid-template-columns: 1fr 1fr 1fr; }
+    .grid-2, .funnel-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 700px) {
+    .kpi-row { grid-template-columns: 1fr; }
+    .dashboard { padding: 16px; }
+    .header { padding: 16px 20px 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER with TABS -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>Organizational Prompts — Usage Analytics</h1>
+      <div class="subtitle">Contoso Ltd &middot; Tenant: 4f7c3a91-... &middot; Report generated Mar 8, 2026</div>
+    </div>
+    <div class="header-right">
+      <div class="time-toggle">
+        <button onclick="setRange(28, this)" class="active">28 days</button>
+        <button onclick="setRange(90, this)">90 days</button>
+        <button onclick="setRange(180, this)">180 days</button>
+      </div>
+      <button class="export-btn" onclick="alert('Export to Excel — coming soon')">Export</button>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('ga', this)">
+      GA Dashboard
+      <span class="tab-badge badge-ga">MAC</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('offline', this)">
+      Offline Report
+      <span class="tab-badge badge-offline">Phase 1</span>
+    </button>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- TAB 1: GA DASHBOARD (everything — per-prompt + aggregate)          -->
+<!-- ================================================================== -->
+<div id="tab-ga" class="tab-content active">
+<div class="dashboard">
+
+  <div class="phase-banner ga">
+    <div class="phase-banner-icon">&#9989;</div>
+    <div class="phase-banner-text">
+      <strong>GA Dashboard — Microsoft Admin Center</strong>
+      Full self-service experience including per-prompt performance. This is the target design for the Copilot Usage Reports integration.
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="label">Daily Active Users (DAU)</div>
+      <div class="label-help">Unique users who submitted an org prompt today</div>
+      <div class="value">38</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +5 vs. same day last week</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Monthly Active Users (MAU)</div>
+      <div class="label-help">Unique users who submitted an org prompt in the last 28 days</div>
+      <div class="value">156</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +18 vs. prior 28 days (+13.0%)</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">DAU / MAU Ratio</div>
+      <div class="label-help">Stickiness — what fraction of monthly users come back on any given day</div>
+      <div class="value">24.4%</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +2.1pp vs. prior period</div>
+    </div>
+  </div>
+
+  <!-- Engagement Funnel -->
+  <div class="section funnel-section">
+    <div class="section-title">Engagement Funnel</div>
+    <div class="section-subtitle">The user journey from discovery to submission — each stage shows unique users in the last 28 days</div>
+    <div class="funnel-grid">
+      <div>
+        <div class="funnel-col-title">Unique Users at Each Stage (Last 28 Days)</div>
+        <div class="funnel-viz" id="funnelViz"></div>
+      </div>
+      <div>
+        <div class="funnel-col-title">Weekly Breakdown — Users at Each Funnel Stage</div>
+        <div class="chart-container stacked"><canvas id="funnelTrendChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Avg Submissions + Inferred SAT -->
+  <div class="grid-2">
+    <div class="section">
+      <div class="section-title">Avg Submissions per Active User</div>
+      <div class="section-subtitle">How many org prompts does each active user submit per week on average? Higher = more engaged users.</div>
+      <div class="chart-container line-md"><canvas id="ga-avgChart"></canvas></div>
+    </div>
+    <div class="section">
+      <div class="section-title">Inferred Satisfaction (Tenant-Level)</div>
+      <div class="section-subtitle">% of Copilot responses from org prompts that received a thumbs-up (vs. thumbs-up + thumbs-down). Only counts responses where the user gave feedback.</div>
+      <div class="chart-container line-md"><canvas id="ga-satChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Per-Prompt Table -->
+  <div class="section">
+    <div class="section-title">Per-Prompt Performance</div>
+    <div class="section-subtitle">Each row is one organizational prompt. Click column headers to sort.</div>
+    <div class="table-controls">
+      <input type="text" class="search-box" placeholder="Search by Prompt ID..." oninput="filterTable(this.value)">
+      <div class="table-info">Showing <span id="rowCount">15</span> of 42 prompts</div>
+    </div>
+    <table class="data-table" id="promptTable">
+      <thead>
+        <tr>
+          <th onclick="sortTable(0)">Prompt ID <span class="sort-icon">&#9650;&#9660;</span></th>
+          <th onclick="sortTable(1)">Clicks <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Times a user clicked this prompt</span></th>
+          <th onclick="sortTable(2)">Submitted <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Times sent to Copilot</span></th>
+          <th onclick="sortTable(3)">Submit Rate <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Submitted &divide; Clicks</span></th>
+          <th onclick="sortTable(4)">Active Users <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Unique users who submitted</span></th>
+          <th onclick="sortTable(5)">Avg Submissions / User <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Submitted &divide; Active Users</span></th>
+          <th onclick="sortTable(6)">Last Submitted <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Most recent submission date</span></th>
+        </tr>
+      </thead>
+      <tbody id="promptTableBody"></tbody>
+    </table>
+  </div>
+
+</div>
+</div>
+
+<!-- ================================================================== -->
+<!-- TAB 2: OFFLINE REPORT (aggregate only — no per-prompt)             -->
+<!-- ================================================================== -->
+<div id="tab-offline" class="tab-content">
+<div class="dashboard">
+
+  <div class="phase-banner">
+    <div class="phase-banner-icon">&#128230;</div>
+    <div class="phase-banner-text">
+      <strong>Offline Report — Manual Export (Phase 1)</strong>
+      Tenant-level aggregate metrics delivered as a periodic Excel download. Per-prompt data is not yet available for external tenants — we will query Kusto internally and deliver these reports to private preview customers on a monthly or bi-weekly cadence.
+    </div>
+  </div>
+
+  <!-- KPI Cards (same 3) -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="label">Daily Active Users (DAU)</div>
+      <div class="label-help">Unique users who submitted an org prompt today</div>
+      <div class="value">38</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +5 vs. same day last week</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Monthly Active Users (MAU)</div>
+      <div class="label-help">Unique users who submitted an org prompt in the last 28 days</div>
+      <div class="value">156</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +18 vs. prior 28 days (+13.0%)</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">DAU / MAU Ratio</div>
+      <div class="label-help">Stickiness — what fraction of monthly users come back on any given day</div>
+      <div class="value">24.4%</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +2.1pp vs. prior period</div>
+    </div>
+  </div>
+
+  <!-- Engagement Funnel (aggregate only) -->
+  <div class="section funnel-section">
+    <div class="section-title">Engagement Funnel</div>
+    <div class="section-subtitle">Tenant-level user journey — unique users at each stage in the last 28 days</div>
+    <div class="funnel-grid">
+      <div>
+        <div class="funnel-col-title">Unique Users at Each Stage (Last 28 Days)</div>
+        <div class="funnel-viz" id="offlineFunnelViz"></div>
+      </div>
+      <div>
+        <div class="funnel-col-title">Weekly Breakdown — Users at Each Funnel Stage</div>
+        <div class="chart-container stacked"><canvas id="offline-funnelTrend"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Avg Submissions + Inferred SAT -->
+  <div class="grid-2">
+    <div class="section">
+      <div class="section-title">Avg Submissions per Active User</div>
+      <div class="section-subtitle">How many org prompts does each active user submit per week on average? Higher = more engaged users.</div>
+      <div class="chart-container line-md"><canvas id="offline-avgChart"></canvas></div>
+    </div>
+    <div class="section">
+      <div class="section-title">Inferred Satisfaction (Tenant-Level)</div>
+      <div class="section-subtitle">% of Copilot responses from org prompts that received a thumbs-up (vs. thumbs-up + thumbs-down). Only counts responses where the user gave feedback.</div>
+      <div class="chart-container line-md"><canvas id="offline-satChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- What's NOT in this tab -->
+  <div class="section" style="border-left: 4px solid var(--warning); background: #FFFDF5;">
+    <div class="section-title" style="color: var(--warning);">Not included in Offline Report</div>
+    <div class="section-subtitle" style="margin-bottom: 8px;">The following require per-prompt tracking and will be available in the GA Dashboard (MAC) only:</div>
+    <ul style="font-size: 13px; color: var(--text-secondary); padding-left: 20px; line-height: 2;">
+      <li><strong>Per-Prompt Performance Table</strong> — clicks, submissions, submit rate, active users per prompt</li>
+      <li><strong>Per-Prompt Submit Rate</strong> — conversion from click to submission for each individual prompt</li>
+      <li><strong>Per-Prompt Avg Submissions / User</strong> — usage intensity at the prompt level</li>
+      <li><strong>Per-Prompt Last Submitted Date</strong> — staleness detection for individual prompts</li>
+    </ul>
+  </div>
+
+</div>
+</div>
+
+<script>
+Chart.defaults.font.family = "'Segoe UI', sans-serif";
+Chart.defaults.font.size = 12;
+Chart.defaults.color = '#616161';
+
+// ====================
+// SHARED DATA
+// ====================
+const weeks = ['Jan 12', 'Jan 19', 'Jan 26', 'Feb 2', 'Feb 9', 'Feb 16', 'Feb 23', 'Mar 1', 'Mar 8'];
+const avgData = [2.8, 3.2, 3.6, 3.5, 3.8, 3.7, 4.0, 4.3, 4.6];
+const satData = [78.2, 80.5, 79.8, 82.1, 83.0, 81.5, 84.2, 85.8, 86.4];
+const sampleData = [45, 58, 62, 70, 78, 82, 95, 110, 125];
+
+const funnelWeekLabels = ['W1\nFeb 9', 'W2\nFeb 16', 'W3\nFeb 23', 'W4\nMar 1', 'W5\nMar 8'];
+const funnelStackedSets = [
+  { label: 'Saw on ZQ card only', data: [180, 195, 205, 210, 220], bg: '#D1D1E9' },
+  { label: 'Opened gallery but didn\'t click', data: [120, 125, 130, 135, 140], bg: '#B0B0D0' },
+  { label: 'Clicked a prompt but didn\'t submit', data: [85, 90, 100, 110, 115], bg: '#8B8CC7' },
+  { label: 'Submitted an org prompt', data: [48, 55, 62, 72, 82], bg: '#6264A7' },
+];
+
+const funnel = { zq: 720, gallery: 520, clicked: 312, submitted: 156 };
+
+const promptData = [
+  { id:'prompt-abc-123', clicks:920, exec:230, users:45, avg:5.1, lastUsed:'2026-02-25' },
+  { id:'prompt-def-456', clicks:680, exec:148, users:32, avg:4.6, lastUsed:'2026-03-05' },
+  { id:'prompt-xyz-999', clicks:560, exec:112, users:28, avg:4.0, lastUsed:'2026-03-07' },
+  { id:'prompt-lmn-222', clicks:480, exec:95,  users:25, avg:3.8, lastUsed:'2026-03-06' },
+  { id:'prompt-opq-333', clicks:420, exec:88,  users:22, avg:4.0, lastUsed:'2026-03-04' },
+  { id:'prompt-rst-444', clicks:350, exec:72,  users:18, avg:4.0, lastUsed:'2026-03-01' },
+  { id:'prompt-uvw-555', clicks:280, exec:60,  users:15, avg:4.0, lastUsed:'2026-02-28' },
+  { id:'prompt-hjk-666', clicks:210, exec:48,  users:12, avg:4.0, lastUsed:'2026-02-20' },
+  { id:'prompt-wer-777', clicks:160, exec:38,  users:10, avg:3.8, lastUsed:'2026-03-02' },
+  { id:'prompt-typ-888', clicks:110, exec:25,  users:8,  avg:3.1, lastUsed:'2026-02-18' },
+  { id:'prompt-mno-345', clicks:72,  exec:20,  users:7,  avg:2.9, lastUsed:'2026-02-15' },
+  { id:'prompt-ghi-789', clicks:48,  exec:5,   users:3,  avg:1.7, lastUsed:'2026-01-15' },
+  { id:'prompt-pqr-678', clicks:65,  exec:16,  users:5,  avg:3.2, lastUsed:'2026-02-10' },
+  { id:'prompt-stu-234', clicks:12,  exec:1,   users:1,  avg:1.0, lastUsed:'2026-01-05' },
+  { id:'prompt-jkl-012', clicks:0,   exec:0,   users:0,  avg:0,   lastUsed:'Never' },
+];
+promptData.forEach(p => { p.submitRate = p.clicks > 0 ? (p.exec / p.clicks * 100) : 0; });
+
+// ====================
+// CHART BUILDERS (reusable)
+// ====================
+const tooltipStyle = { backgroundColor:'#fff', titleColor:'#242424', bodyColor:'#616161', borderColor:'#E0E0E0', borderWidth:1, cornerRadius:8, padding:12 };
+
+function buildFunnelTrend(canvasId) {
+  return new Chart(document.getElementById(canvasId).getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: funnelWeekLabels,
+      datasets: funnelStackedSets.map((s, i) => ({
+        label: s.label, data: s.data, backgroundColor: s.bg,
+        borderRadius: i === funnelStackedSets.length - 1 ? { topLeft: 4, topRight: 4 } : 0,
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position:'bottom', labels:{ usePointStyle:true, padding:10, font:{size:10} } },
+        tooltip: { callbacks:{ label: ctx => ctx.dataset.label + ': ' + ctx.raw + ' users' }, ...tooltipStyle }
+      },
+      scales: {
+        x: { stacked:true, grid:{display:false} },
+        y: { stacked:true, title:{ display:true, text:'Unique users at each funnel stage', font:{size:11} }, grid:{color:'rgba(0,0,0,0.05)'}, beginAtZero:true }
+      }
+    }
+  });
+}
+
+function buildAvgChart(canvasId) {
+  return new Chart(document.getElementById(canvasId).getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: weeks,
+      datasets: [{
+        label: 'Avg org prompt submissions per active user (weekly)',
+        data: avgData,
+        borderColor: '#6264A7', backgroundColor: 'rgba(98,100,167,0.08)',
+        fill: true, tension: 0.35, pointRadius: 5, pointHoverRadius: 8,
+        pointBackgroundColor: '#6264A7', borderWidth: 2.5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks:{ label: ctx => 'Avg ' + ctx.raw.toFixed(1) + ' submissions per active user that week' }, ...tooltipStyle }
+      },
+      scales: {
+        y: { title:{ display:true, text:'Avg submissions per active user (that week)', font:{size:11} }, grid:{color:'rgba(0,0,0,0.05)'}, beginAtZero:true, suggestedMax:6 },
+        x: { grid:{display:false} }
+      }
+    }
+  });
+}
+
+function buildSatChart(canvasId) {
+  return new Chart(document.getElementById(canvasId).getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: weeks,
+      datasets: [
+        {
+          label: 'Inferred SAT % (thumbs-up rate)',
+          data: satData,
+          borderColor: '#13A10E', backgroundColor: 'rgba(19,161,14,0.08)',
+          fill: true, tension: 0.35, pointRadius: 5, pointHoverRadius: 8,
+          pointBackgroundColor: '#13A10E', borderWidth: 2.5,
+        },
+        {
+          label: 'Responses with feedback (sample size)',
+          data: sampleData,
+          borderColor: '#8A8A8A', borderDash: [4,4],
+          tension: 0.35, pointRadius: 3, borderWidth: 1.5, yAxisID: 'y1',
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { position:'top', labels:{ usePointStyle:true, padding:16, font:{size:11} } },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              if (ctx.datasetIndex === 0) return 'SAT: ' + ctx.raw.toFixed(1) + '% of responses got thumbs-up';
+              return ctx.raw + ' responses received thumbs-up or thumbs-down that week';
+            }
+          }, ...tooltipStyle
+        }
+      },
+      scales: {
+        y: { title:{ display:true, text:'Thumbs-up rate (%)', color:'#13A10E', font:{size:11} }, grid:{color:'rgba(0,0,0,0.05)'}, min:60, max:100 },
+        y1: { type:'linear', position:'right', title:{ display:true, text:'Responses with feedback (sample size)', color:'#8A8A8A', font:{size:11} }, grid:{drawOnChartArea:false}, beginAtZero:true },
+        x: { grid:{display:false} }
+      }
+    }
+  });
+}
+
+function renderFunnelViz(containerId) {
+  const container = document.getElementById(containerId);
+  const steps = [
+    { label:'ZQ Card', sub:'Saw an org prompt surfaced on the zero-query card before typing', users:funnel.zq, color:'#D1D1E9', textColor:'#464775', width:100 },
+    { label:'Prompt Gallery', sub:'Opened the Prompt Gallery and browsed org prompts', users:funnel.gallery, color:'#B0B0D0', textColor:'#464775', width:78 },
+    { label:'Clicked a Prompt', sub:'Clicked on a specific org prompt to preview or use it', users:funnel.clicked, color:'#8B8CC7', textColor:'#fff', width:54 },
+    { label:'Submitted', sub:'Sent the org prompt to Copilot (with or without edits)', users:funnel.submitted, color:'#6264A7', textColor:'#fff', width:34 },
+  ];
+  const convs = [
+    { label:'Gallery open rate', rate:(funnel.gallery/funnel.zq*100).toFixed(1)+'%' },
+    { label:'Click rate', rate:(funnel.clicked/funnel.gallery*100).toFixed(1)+'%' },
+    { label:'Submit rate', rate:(funnel.submitted/funnel.clicked*100).toFixed(1)+'%' },
+  ];
+  const e2e = (funnel.submitted / funnel.zq * 100).toFixed(1);
+
+  let html = '';
+  steps.forEach((s, i) => {
+    html += `<div class="funnel-step">
+      <div class="funnel-step-label">${s.label}<span class="fsl-sub">${s.sub}</span></div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${s.width}%;background:${s.color};color:${s.textColor};"><span class="fb-num">${s.users.toLocaleString()}</span><span class="fb-label">unique users</span></div></div>
+      <div class="funnel-step-metrics"><strong>${s.users.toLocaleString()}</strong> users${i===0?'<br><span style="font-size:10px;color:var(--text-tertiary);">(of ~843 Copilot MAU)</span>':''}</div>
+    </div>`;
+    if (i < convs.length) {
+      html += `<div class="funnel-connector"><div class="funnel-conv-badge"><span class="fcb-arrow">&#8595;</span>${convs[i].label}: <strong>${convs[i].rate}</strong><span class="fcb-arrow">&#8595;</span></div></div>`;
+    }
+  });
+  html += `<div style="margin-top:14px;text-align:center;font-size:12px;color:var(--text-secondary);">End-to-end: <strong style="color:var(--primary);">${e2e}%</strong> of users who saw an org prompt on ZQ went on to submit one</div>`;
+  container.innerHTML = html;
+}
+
+// ====================
+// TAB 1: GA — init immediately
+// ====================
+renderFunnelViz('funnelViz');
+buildFunnelTrend('funnelTrendChart');
+buildAvgChart('ga-avgChart');
+buildSatChart('ga-satChart');
+
+// Per-prompt table
+function getBarClass(val, t) { return val >= t[0] ? 'high' : val >= t[1] ? 'mid' : 'low'; }
+
+function renderTable(data) {
+  const tbody = document.getElementById('promptTableBody');
+  tbody.innerHTML = '';
+  data.forEach(p => {
+    const sr = p.clicks > 0 ? (p.exec / p.clicks * 100) : 0;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${p.id}</strong></td>
+      <td>${p.clicks.toLocaleString()}</td>
+      <td>${p.exec.toLocaleString()}</td>
+      <td><div class="mini-bar-cell"><div class="mini-bar-bg"><div class="mini-bar-fill ${getBarClass(sr,[30,15])}" style="width:${Math.min(sr*1.5,100)}%"></div></div><span>${sr>0?sr.toFixed(1)+'%':'—'}</span></div></td>
+      <td>${p.users}</td>
+      <td>${p.avg > 0 ? p.avg.toFixed(1) : '—'}</td>
+      <td>${p.lastUsed}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('rowCount').textContent = data.length;
+}
+renderTable(promptData);
+
+let sortCol = -1, sortAsc = true;
+function sortTable(col) {
+  if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = true; }
+  const keys = ['id','clicks','exec','submitRate','users','avg','lastUsed'];
+  promptData.sort((a, b) => {
+    let va = a[keys[col]], vb = b[keys[col]];
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+    return va < vb ? (sortAsc?-1:1) : va > vb ? (sortAsc?1:-1) : 0;
+  });
+  renderTable(promptData);
+}
+
+function filterTable(q) {
+  renderTable(promptData.filter(p => p.id.toLowerCase().includes(q.toLowerCase())));
+}
+
+// ====================
+// TAB 2: OFFLINE — init on first visit (Chart.js needs visible canvas)
+// ====================
+let offlineInitialized = false;
+
+function initOfflineTab() {
+  if (offlineInitialized) return;
+  offlineInitialized = true;
+  renderFunnelViz('offlineFunnelViz');
+  buildFunnelTrend('offline-funnelTrend');
+  buildAvgChart('offline-avgChart');
+  buildSatChart('offline-satChart');
+}
+
+// ====================
+// TAB SWITCHING
+// ====================
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+
+  if (tab === 'offline') {
+    // Small delay so canvas is visible before Chart.js init
+    setTimeout(initOfflineTab, 50);
+  }
+}
+
+function setRange(days, btn) {
+  document.querySelectorAll('.time-toggle button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>

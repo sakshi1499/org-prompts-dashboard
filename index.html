@@ -61,14 +61,17 @@
 
   /* KPI Cards */
   .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
-  .kpi-card { background: var(--card-bg); border-radius: 8px; padding: 22px 28px; box-shadow: var(--shadow); border-top: 3px solid var(--primary); }
-  .kpi-card .label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-  .kpi-card .label-help { font-size: 11px; color: var(--text-tertiary); font-weight: 400; text-transform: none; letter-spacing: 0; margin-top: 1px; }
-  .kpi-card .value { font-size: 36px; font-weight: 700; color: var(--text); margin: 6px 0 2px; }
-  .kpi-card .delta { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+  .kpi-row.six { grid-template-columns: repeat(6, 1fr); }
+  .kpi-card { background: var(--card-bg); border-radius: 8px; padding: 20px 22px; box-shadow: var(--shadow); border-top: 3px solid var(--primary); }
+  .kpi-card.accent-success { border-top-color: var(--success); }
+  .kpi-card .label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  .kpi-card .label-help { font-size: 10px; color: var(--text-tertiary); font-weight: 400; text-transform: none; letter-spacing: 0; margin-top: 1px; line-height: 1.3; }
+  .kpi-card .value { font-size: 32px; font-weight: 700; color: var(--text); margin: 4px 0 2px; }
+  .kpi-card .value.sm { font-size: 26px; }
+  .kpi-card .delta { font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
   .delta.up { color: var(--success); }
   .delta.down { color: var(--danger); }
-  .delta .arrow { font-size: 13px; }
+  .delta .arrow { font-size: 12px; }
 
   /* Section */
   .section { background: var(--card-bg); border-radius: 8px; padding: 24px; box-shadow: var(--shadow); margin-bottom: 24px; }
@@ -118,6 +121,8 @@
   .mini-bar-fill.high { background: var(--success); }
   .mini-bar-fill.mid { background: var(--warning); }
   .mini-bar-fill.low { background: var(--danger); }
+  .stale-icon { color: var(--warning); font-size: 14px; cursor: help; }
+  .quality-warn { color: var(--danger); font-size: 12px; cursor: help; }
 
   /* Phase banner */
   .phase-banner {
@@ -131,10 +136,11 @@
 
   @media (max-width: 1100px) {
     .kpi-row { grid-template-columns: 1fr 1fr 1fr; }
+    .kpi-row.six { grid-template-columns: repeat(3, 1fr); }
     .grid-2, .funnel-grid { grid-template-columns: 1fr; }
   }
   @media (max-width: 700px) {
-    .kpi-row { grid-template-columns: 1fr; }
+    .kpi-row, .kpi-row.six { grid-template-columns: 1fr; }
     .dashboard { padding: 16px; }
     .header { padding: 16px 20px 0; }
   }
@@ -171,7 +177,7 @@
 </div>
 
 <!-- ================================================================== -->
-<!-- TAB 1: GA DASHBOARD (everything — per-prompt + aggregate)          -->
+<!-- TAB 1: GA DASHBOARD                                                 -->
 <!-- ================================================================== -->
 <div id="tab-ga" class="tab-content active">
 <div class="dashboard">
@@ -185,24 +191,42 @@
   </div>
 
   <!-- KPI Cards -->
-  <div class="kpi-row">
+  <div class="kpi-row six">
     <div class="kpi-card">
-      <div class="label">Daily Active Users (DAU)</div>
+      <div class="label">DAU</div>
       <div class="label-help">Unique users who submitted an org prompt today</div>
       <div class="value">38</div>
-      <div class="delta up"><span class="arrow">&#9650;</span> +5 vs. same day last week</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +5 vs. last week</div>
     </div>
     <div class="kpi-card">
-      <div class="label">Monthly Active Users (MAU)</div>
-      <div class="label-help">Unique users who submitted an org prompt in the last 28 days</div>
+      <div class="label">WAU</div>
+      <div class="label-help">Unique users in the last 7 days</div>
+      <div class="value">82</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +10 vs. prior week</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">MAU</div>
+      <div class="label-help">Unique users in the last 28 days</div>
       <div class="value">156</div>
-      <div class="delta up"><span class="arrow">&#9650;</span> +18 vs. prior 28 days (+13.0%)</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +18 vs. prior 28d (+13.0%)</div>
     </div>
     <div class="kpi-card">
-      <div class="label">DAU / MAU Ratio</div>
-      <div class="label-help">Stickiness — what fraction of monthly users come back on any given day</div>
-      <div class="value">24.4%</div>
-      <div class="delta up"><span class="arrow">&#9650;</span> +2.1pp vs. prior period</div>
+      <div class="label">DAU / MAU</div>
+      <div class="label-help">Stickiness — daily return rate</div>
+      <div class="value sm">24.4%</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +2.1pp vs. prior</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">WAU / MAU</div>
+      <div class="label-help">Weekly stickiness — weekly return rate</div>
+      <div class="value sm">52.6%</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +3.4pp vs. prior</div>
+    </div>
+    <div class="kpi-card accent-success">
+      <div class="label">7-Day Retention</div>
+      <div class="label-help">% of this week's submitters active next week</div>
+      <div class="value sm">68.3%</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +4.1pp vs. prior</div>
     </div>
   </div>
 
@@ -231,7 +255,7 @@
     </div>
     <div class="section">
       <div class="section-title">Inferred Satisfaction (Tenant-Level)</div>
-      <div class="section-subtitle">% of Copilot responses from org prompts that received a thumbs-up (vs. thumbs-up + thumbs-down). Only counts responses where the user gave feedback.</div>
+      <div class="section-subtitle">% of Copilot responses from org prompts that received a thumbs-up (vs. thumbs-up + thumbs-down). Only shown when &ge;20 rated responses.</div>
       <div class="chart-container line-md"><canvas id="ga-satChart"></canvas></div>
     </div>
   </div>
@@ -239,21 +263,23 @@
   <!-- Per-Prompt Table -->
   <div class="section">
     <div class="section-title">Per-Prompt Performance</div>
-    <div class="section-subtitle">Each row is one organizational prompt. Click column headers to sort.</div>
+    <div class="section-subtitle">Each row is one organizational prompt. Click column headers to sort. <span style="color:var(--warning);">&#9888;</span> = stale (30+ days), <span style="color:var(--danger);">&#9888;</span> = &gt;10% thumbs-down</div>
     <div class="table-controls">
-      <input type="text" class="search-box" placeholder="Search by Prompt ID..." oninput="filterTable(this.value)">
+      <input type="text" class="search-box" placeholder="Search by Prompt Name..." oninput="filterTable(this.value)">
       <div class="table-info">Showing <span id="rowCount">15</span> of 42 prompts</div>
     </div>
     <table class="data-table" id="promptTable">
       <thead>
         <tr>
-          <th onclick="sortTable(0)">Prompt ID <span class="sort-icon">&#9650;&#9660;</span></th>
-          <th onclick="sortTable(1)">Clicks <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Times a user clicked this prompt</span></th>
-          <th onclick="sortTable(2)">Submitted <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Times sent to Copilot</span></th>
-          <th onclick="sortTable(3)">Submit Rate <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Submitted &divide; Clicks</span></th>
-          <th onclick="sortTable(4)">Active Users <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Unique users who submitted</span></th>
-          <th onclick="sortTable(5)">Avg Submissions / User <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Submitted &divide; Active Users</span></th>
-          <th onclick="sortTable(6)">Last Submitted <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Most recent submission date</span></th>
+          <th onclick="sortTable(0)">Prompt Name <span class="sort-icon">&#9650;&#9660;</span></th>
+          <th onclick="sortTable(1)">Clicks <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Times clicked to preview</span></th>
+          <th onclick="sortTable(2)">CTR <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Clicks &divide; Impressions</span></th>
+          <th onclick="sortTable(3)">Submitted <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Times sent to Copilot</span></th>
+          <th onclick="sortTable(4)">Submit Rate <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Submitted &divide; Clicks</span></th>
+          <th onclick="sortTable(5)">Active Users <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Unique submitters</span></th>
+          <th onclick="sortTable(6)">SAT Rate <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Thumbs-up rate</span></th>
+          <th onclick="sortTable(7)">Avg / User <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Submitted &divide; Users</span></th>
+          <th onclick="sortTable(8)">Last Submitted <span class="sort-icon">&#9650;&#9660;</span><span class="th-sub">Most recent date</span></th>
         </tr>
       </thead>
       <tbody id="promptTableBody"></tbody>
@@ -264,7 +290,7 @@
 </div>
 
 <!-- ================================================================== -->
-<!-- TAB 2: OFFLINE REPORT (aggregate only — no per-prompt)             -->
+<!-- TAB 2: OFFLINE REPORT                                               -->
 <!-- ================================================================== -->
 <div id="tab-offline" class="tab-content">
 <div class="dashboard">
@@ -277,29 +303,47 @@
     </div>
   </div>
 
-  <!-- KPI Cards (same 3) -->
-  <div class="kpi-row">
+  <!-- KPI Cards -->
+  <div class="kpi-row six">
     <div class="kpi-card">
-      <div class="label">Daily Active Users (DAU)</div>
+      <div class="label">DAU</div>
       <div class="label-help">Unique users who submitted an org prompt today</div>
       <div class="value">38</div>
-      <div class="delta up"><span class="arrow">&#9650;</span> +5 vs. same day last week</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +5 vs. last week</div>
     </div>
     <div class="kpi-card">
-      <div class="label">Monthly Active Users (MAU)</div>
-      <div class="label-help">Unique users who submitted an org prompt in the last 28 days</div>
+      <div class="label">WAU</div>
+      <div class="label-help">Unique users in the last 7 days</div>
+      <div class="value">82</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +10 vs. prior week</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">MAU</div>
+      <div class="label-help">Unique users in the last 28 days</div>
       <div class="value">156</div>
-      <div class="delta up"><span class="arrow">&#9650;</span> +18 vs. prior 28 days (+13.0%)</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +18 vs. prior 28d (+13.0%)</div>
     </div>
     <div class="kpi-card">
-      <div class="label">DAU / MAU Ratio</div>
-      <div class="label-help">Stickiness — what fraction of monthly users come back on any given day</div>
-      <div class="value">24.4%</div>
-      <div class="delta up"><span class="arrow">&#9650;</span> +2.1pp vs. prior period</div>
+      <div class="label">DAU / MAU</div>
+      <div class="label-help">Stickiness — daily return rate</div>
+      <div class="value sm">24.4%</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +2.1pp vs. prior</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">WAU / MAU</div>
+      <div class="label-help">Weekly stickiness — weekly return rate</div>
+      <div class="value sm">52.6%</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +3.4pp vs. prior</div>
+    </div>
+    <div class="kpi-card accent-success">
+      <div class="label">7-Day Retention</div>
+      <div class="label-help">% of this week's submitters active next week</div>
+      <div class="value sm">68.3%</div>
+      <div class="delta up"><span class="arrow">&#9650;</span> +4.1pp vs. prior</div>
     </div>
   </div>
 
-  <!-- Engagement Funnel (aggregate only) -->
+  <!-- Engagement Funnel -->
   <div class="section funnel-section">
     <div class="section-title">Engagement Funnel</div>
     <div class="section-subtitle">Tenant-level user journey — unique users at each stage in the last 28 days</div>
@@ -319,12 +363,12 @@
   <div class="grid-2">
     <div class="section">
       <div class="section-title">Avg Submissions per Active User</div>
-      <div class="section-subtitle">How many org prompts does each active user submit per week on average? Higher = more engaged users.</div>
+      <div class="section-subtitle">How many org prompts does each active user submit per week on average?</div>
       <div class="chart-container line-md"><canvas id="offline-avgChart"></canvas></div>
     </div>
     <div class="section">
       <div class="section-title">Inferred Satisfaction (Tenant-Level)</div>
-      <div class="section-subtitle">% of Copilot responses from org prompts that received a thumbs-up (vs. thumbs-up + thumbs-down). Only counts responses where the user gave feedback.</div>
+      <div class="section-subtitle">% of Copilot responses from org prompts that received a thumbs-up. Only shown when &ge;20 rated responses.</div>
       <div class="chart-container line-md"><canvas id="offline-satChart"></canvas></div>
     </div>
   </div>
@@ -334,9 +378,10 @@
     <div class="section-title" style="color: var(--warning);">Not included in Offline Report</div>
     <div class="section-subtitle" style="margin-bottom: 8px;">The following require per-prompt tracking and will be available in the GA Dashboard (MAC) only:</div>
     <ul style="font-size: 13px; color: var(--text-secondary); padding-left: 20px; line-height: 2;">
-      <li><strong>Per-Prompt Performance Table</strong> — clicks, submissions, submit rate, active users per prompt</li>
-      <li><strong>Per-Prompt Submit Rate</strong> — conversion from click to submission for each individual prompt</li>
-      <li><strong>Per-Prompt Avg Submissions / User</strong> — usage intensity at the prompt level</li>
+      <li><strong>Per-Prompt Clicks &amp; CTR</strong> — discoverability and attractiveness at the prompt level</li>
+      <li><strong>Per-Prompt Submissions &amp; Submit Rate</strong> — conversion from click to submission for each prompt</li>
+      <li><strong>Per-Prompt Active Users &amp; Avg Submissions / User</strong> — breadth and depth of adoption</li>
+      <li><strong>Per-Prompt Satisfaction Rate</strong> — thumbs-up rate per prompt with quality warning flags</li>
       <li><strong>Per-Prompt Last Submitted Date</strong> — staleness detection for individual prompts</li>
     </ul>
   </div>
@@ -368,26 +413,29 @@ const funnelStackedSets = [
 const funnel = { zq: 720, gallery: 520, clicked: 312, submitted: 156 };
 
 const promptData = [
-  { id:'prompt-abc-123', clicks:920, exec:230, users:45, avg:5.1, lastUsed:'2026-02-25' },
-  { id:'prompt-def-456', clicks:680, exec:148, users:32, avg:4.6, lastUsed:'2026-03-05' },
-  { id:'prompt-xyz-999', clicks:560, exec:112, users:28, avg:4.0, lastUsed:'2026-03-07' },
-  { id:'prompt-lmn-222', clicks:480, exec:95,  users:25, avg:3.8, lastUsed:'2026-03-06' },
-  { id:'prompt-opq-333', clicks:420, exec:88,  users:22, avg:4.0, lastUsed:'2026-03-04' },
-  { id:'prompt-rst-444', clicks:350, exec:72,  users:18, avg:4.0, lastUsed:'2026-03-01' },
-  { id:'prompt-uvw-555', clicks:280, exec:60,  users:15, avg:4.0, lastUsed:'2026-02-28' },
-  { id:'prompt-hjk-666', clicks:210, exec:48,  users:12, avg:4.0, lastUsed:'2026-02-20' },
-  { id:'prompt-wer-777', clicks:160, exec:38,  users:10, avg:3.8, lastUsed:'2026-03-02' },
-  { id:'prompt-typ-888', clicks:110, exec:25,  users:8,  avg:3.1, lastUsed:'2026-02-18' },
-  { id:'prompt-mno-345', clicks:72,  exec:20,  users:7,  avg:2.9, lastUsed:'2026-02-15' },
-  { id:'prompt-ghi-789', clicks:48,  exec:5,   users:3,  avg:1.7, lastUsed:'2026-01-15' },
-  { id:'prompt-pqr-678', clicks:65,  exec:16,  users:5,  avg:3.2, lastUsed:'2026-02-10' },
-  { id:'prompt-stu-234', clicks:12,  exec:1,   users:1,  avg:1.0, lastUsed:'2026-01-05' },
-  { id:'prompt-jkl-012', clicks:0,   exec:0,   users:0,  avg:0,   lastUsed:'Never' },
+  { id:'Quarterly Business Review Template', impressions:2100, clicks:920, exec:230, users:45, avg:5.1, sat:92.1, thumbsDown:4.2, lastUsed:'2026-02-25' },
+  { id:'Customer Meeting Prep', impressions:1600, clicks:680, exec:148, users:32, avg:4.6, sat:88.5, thumbsDown:6.1, lastUsed:'2026-03-05' },
+  { id:'Project Status Update', impressions:1400, clicks:560, exec:112, users:28, avg:4.0, sat:90.2, thumbsDown:3.8, lastUsed:'2026-03-07' },
+  { id:'1:1 Agenda Builder', impressions:1200, clicks:480, exec:95,  users:25, avg:3.8, sat:87.3, thumbsDown:5.5, lastUsed:'2026-03-06' },
+  { id:'Email Draft Assistant', impressions:1050, clicks:420, exec:88,  users:22, avg:4.0, sat:85.0, thumbsDown:7.2, lastUsed:'2026-03-04' },
+  { id:'Meeting Summary Generator', impressions:900, clicks:350, exec:72,  users:18, avg:4.0, sat:91.5, thumbsDown:3.0, lastUsed:'2026-03-01' },
+  { id:'Presentation Outline', impressions:720, clicks:280, exec:60,  users:15, avg:4.0, sat:83.2, thumbsDown:8.4, lastUsed:'2026-02-28' },
+  { id:'HR Policy Q&A', impressions:580, clicks:210, exec:48,  users:12, avg:4.0, sat:89.1, thumbsDown:4.9, lastUsed:'2026-02-20' },
+  { id:'Code Review Checklist', impressions:420, clicks:160, exec:38,  users:10, avg:3.8, sat:86.7, thumbsDown:6.8, lastUsed:'2026-03-02' },
+  { id:'Incident Report Template', impressions:310, clicks:110, exec:25,  users:8,  avg:3.1, sat:82.0, thumbsDown:9.5, lastUsed:'2026-02-18' },
+  { id:'Onboarding Buddy Guide', impressions:240, clicks:72,  exec:20,  users:7,  avg:2.9, sat:78.5, thumbsDown:12.3, lastUsed:'2026-02-15' },
+  { id:'Sales Pitch Generator', impressions:180, clicks:48,  exec:5,   users:3,  avg:1.7, sat:60.0, thumbsDown:20.0, lastUsed:'2026-01-15' },
+  { id:'Travel Request Helper', impressions:150, clicks:65,  exec:16,  users:5,  avg:3.2, sat:81.3, thumbsDown:6.3, lastUsed:'2026-02-10' },
+  { id:'Budget Forecast Explainer', impressions:45, clicks:12,  exec:1,   users:1,  avg:1.0, sat:null, thumbsDown:null, lastUsed:'2026-01-05' },
+  { id:'Team Retro Facilitator', impressions:30, clicks:0,   exec:0,   users:0,  avg:0,   sat:null, thumbsDown:null, lastUsed:'Never' },
 ];
-promptData.forEach(p => { p.submitRate = p.clicks > 0 ? (p.exec / p.clicks * 100) : 0; });
+promptData.forEach(p => {
+  p.submitRate = p.clicks > 0 ? (p.exec / p.clicks * 100) : 0;
+  p.ctr = p.impressions > 0 ? (p.clicks / p.impressions * 100) : 0;
+});
 
 // ====================
-// CHART BUILDERS (reusable)
+// CHART BUILDERS
 // ====================
 const tooltipStyle = { backgroundColor:'#fff', titleColor:'#242424', bodyColor:'#616161', borderColor:'#E0E0E0', borderWidth:1, cornerRadius:8, padding:12 };
 
@@ -518,7 +566,7 @@ function renderFunnelViz(containerId) {
 }
 
 // ====================
-// TAB 1: GA — init immediately
+// TAB 1: GA — init
 // ====================
 renderFunnelViz('funnelViz');
 buildFunnelTrend('funnelTrendChart');
@@ -531,17 +579,25 @@ function getBarClass(val, t) { return val >= t[0] ? 'high' : val >= t[1] ? 'mid'
 function renderTable(data) {
   const tbody = document.getElementById('promptTableBody');
   tbody.innerHTML = '';
+  const now = new Date('2026-03-08');
   data.forEach(p => {
-    const sr = p.clicks > 0 ? (p.exec / p.clicks * 100) : 0;
+    const sr = p.submitRate;
+    const ctr = p.ctr;
+    const isStale = p.lastUsed !== 'Never' && ((now - new Date(p.lastUsed)) / 86400000) > 30;
+    const isNeverUsed = p.lastUsed === 'Never';
+    const hasQualityWarn = p.thumbsDown !== null && p.thumbsDown > 10;
+    const satDisplay = p.sat !== null ? p.sat.toFixed(1) + '%' : '<span style="color:var(--text-tertiary);font-size:11px;">Insufficient data</span>';
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><strong>${p.id}</strong></td>
+      <td><strong>${p.id}</strong>${hasQualityWarn ? ' <span class="quality-warn" title="'+p.thumbsDown.toFixed(1)+'% thumbs-down — review prompt quality">&#9888;</span>' : ''}</td>
       <td>${p.clicks.toLocaleString()}</td>
+      <td><div class="mini-bar-cell"><div class="mini-bar-bg"><div class="mini-bar-fill ${getBarClass(ctr,[40,20])}" style="width:${Math.min(ctr,100)}%"></div></div><span>${ctr>0?ctr.toFixed(1)+'%':'—'}</span></div></td>
       <td>${p.exec.toLocaleString()}</td>
-      <td><div class="mini-bar-cell"><div class="mini-bar-bg"><div class="mini-bar-fill ${getBarClass(sr,[30,15])}" style="width:${Math.min(sr*1.5,100)}%"></div></div><span>${sr>0?sr.toFixed(1)+'%':'—'}</span></div></td>
+      <td><div class="mini-bar-cell"><div class="mini-bar-bg"><div class="mini-bar-fill ${getBarClass(sr,[20,10])}" style="width:${Math.min(sr*1.5,100)}%"></div></div><span>${sr>0?sr.toFixed(1)+'%':'—'}</span></div></td>
       <td>${p.users}</td>
+      <td>${satDisplay}</td>
       <td>${p.avg > 0 ? p.avg.toFixed(1) : '—'}</td>
-      <td>${p.lastUsed}</td>`;
+      <td>${p.lastUsed}${(isStale || isNeverUsed) ? ' <span class="stale-icon" title="Stale — no submissions in 30+ days">&#9888;</span>' : ''}</td>`;
     tbody.appendChild(tr);
   });
   document.getElementById('rowCount').textContent = data.length;
@@ -551,9 +607,10 @@ renderTable(promptData);
 let sortCol = -1, sortAsc = true;
 function sortTable(col) {
   if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = true; }
-  const keys = ['id','clicks','exec','submitRate','users','avg','lastUsed'];
+  const keys = ['id','clicks','ctr','exec','submitRate','users','sat','avg','lastUsed'];
   promptData.sort((a, b) => {
     let va = a[keys[col]], vb = b[keys[col]];
+    if (va === null) va = -1; if (vb === null) vb = -1;
     if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
     return va < vb ? (sortAsc?-1:1) : va > vb ? (sortAsc?1:-1) : 0;
   });
@@ -565,10 +622,9 @@ function filterTable(q) {
 }
 
 // ====================
-// TAB 2: OFFLINE — init on first visit (Chart.js needs visible canvas)
+// TAB 2: OFFLINE — init on first visit
 // ====================
 let offlineInitialized = false;
-
 function initOfflineTab() {
   if (offlineInitialized) return;
   offlineInitialized = true;
@@ -587,10 +643,7 @@ function switchTab(tab, btn) {
   document.getElementById('tab-' + tab).classList.add('active');
   btn.classList.add('active');
 
-  if (tab === 'offline') {
-    // Small delay so canvas is visible before Chart.js init
-    setTimeout(initOfflineTab, 50);
-  }
+  if (tab === 'offline') setTimeout(initOfflineTab, 50);
 }
 
 function setRange(days, btn) {
